@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartStep — Clasificación de Pisada</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      background-color: #ffffff;
+      color: #000000;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      font-size: 26px;
+      letter-spacing: 1px;
+      margin: 0 0 20px 0;
+      color: #000000;
+      text-align: center;
+    }
+
+    .dashboard-container {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 36px;
+      width: 100%;
+      max-width: 900px;
+      background: #ffffff;
+      padding: 28px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      border: 1px solid #000000;
+    }
+
+    .panel-metrics {
+      flex: 1.1;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card-box {
+      background: #ffffff;
+      padding: 16px;
+      border-radius: 10px;
+      border: 1px solid #000000;
+    }
+
+    .diag-label {
+      font-size: 13px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .diag-value {
+      font-size: 26px;
+      font-weight: 700;
+      color: #000000;
+      transition: color 0.3s;
+    }
+
+    .diag-conf {
+      font-size: 14px;
+      color: #000000;
+      margin-top: 4px;
+    }
+
+    .btn-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .btn {
+      background: #6366f1;
+      color: #ffffff;
+      border: none;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #4f46e5; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      margin-top: 6px;
+    }
+    th {
+      text-align: left;
+      color: #94a3b8;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #1c3249;
+    }
+    td {
+      padding: 8px 0;
+      border-bottom: 1px solid #142436;
+    }
+    td:last-child {
+      text-align: right;
+      font-weight: 600;
+      color: #000000;
+    }
+
+    /* Columna Derecha: Imagen del Pie y Canvas térmico */
+    .panel-heatmap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 24px;
+      border: 1px solid #162a3f;
+    }
+
+    /* Proporción exacta de la imagen adjunta */
+    .foot-stage {
+      position: relative;
+      width: 270px;
+      height: 410px;
+      background: #ffffff;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    /* Tu imagen de fondo */
+    .foot-img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      z-index: 1;
+    }
+
+    /* Canvas de mapa de calor superpuesto con fusión multiply */
+    #heatmapCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+      mix-blend-mode: multiply; /* Permite ver las líneas negras y punteadas del pie por debajo */
+      pointer-events: none;
+    }
+
+    .thermal-scale {
+      margin-top: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+    .scale-bar {
+      width: 140px;
+      height: 8px;
+      border-radius: 4px;
+      background: linear-gradient(to right, #00ffff, #00ff00, #ffff00, #ff0000);
+    }
+  </style>
+</head>
+<body>
+
+  <h1>SmartStep — Clasificación de Pisada</h1>
+
+  <div class="dashboard-container">
+    
+    <div class="panel-metrics">
+      <div class="card-box">
+        <div class="diag-label">Diagnóstico Detectado</div>
+        <div class="diag-value" id="lblDiagnostico">Pie Plano</div>
+        <div class="diag-conf" id="lblCerteza">Confianza: 95.8%</div>
+      </div>
+
+      <div class="btn-group">
+        <button class="btn" onclick="simularPisada('normal')">Test Normal</button>
+        <button class="btn" onclick="simularPisada('plano')">Test Plano</button>
+        <button class="btn" onclick="simularPisada('cavo')">Test Cavo</button>
+        <button class="btn" onclick="simularPisada('muestreo')">Muestreo en Vivo</button>
+      </div>
+
+      <div class="card-box">
+        <div class="diag-label">Distribución de Carga</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Zona Biomecánica</th>
+              <th style="text-align: right;">Carga</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Sección Alta (Metatarsos y Hallux)</td>
+              <td id="valAntepie">40 %</td>
+            </tr>
+            <tr>
+              <td>Sección Media (Bóveda / Arco Medial)</td>
+              <td id="valArco">35 %</td>
+            </tr>
+            <tr>
+              <td>Sección Baja (Retropié / Talón)</td>
+              <td id="valTalon">25 %</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel-heatmap">
+      <div class="foot-stage">
+        <!-- Imagen original colocada en el fondo -->
+        <img src="pie_referencia.png" alt="Silueta anatómica del pie" class="foot-img">
+
+        <!-- Lienzo térmico donde se dibuja el mapa de calor -->
+        <canvas id="heatmapCanvas" width="270" height="410"></canvas>
+      </div>
+
+      <div class="thermal-scale">
+        <span>Baja</span>
+        <div class="scale-bar"></div>
+        <span>Alta</span>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const canvas = document.getElementById('heatmapCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Coordenadas (X, Y) ajustadas a la anatomía exacta de pie_referencia.png (270x410 px)
+    const posicionesSensores = [
+      { id: 'S1', x: 110, y: 350 }, // Talón medial / retropié
+      { id: 'S2', x: 155, y: 350 }, // Talón lateral / retropié
+      { id: 'S3', x: 105, y: 245 }, // Arco medial / mediopié
+      { id: 'S4', x: 100, y: 145 }, // Metatarso 1
+      { id: 'S5', x: 185, y: 155 }, // Metatarso 5
+      { id: 'S6', x: 142, y: 135 }, // Metatarso central
+      { id: 'S7', x: 182, y: 70  }  // Hallux / Dedo gordo
+    ];
+
+    function dibujarAura(x, y, intensidad) {
+      if (intensidad <= 2) return;
+
+      const radio = 20 + (intensidad * 0.42);
+      const grad = ctx.createRadialGradient(x, y, 2, x, y, radio);
+
+      if (intensidad < 30) {
+        // Carga suave: Azul / Cian
+        grad.addColorStop(0, 'rgba(0, 200, 255, 0.85)');
+        grad.addColorStop(0.5, 'rgba(0, 150, 255, 0.4)');
+        grad.addColorStop(1, 'rgba(0, 100, 255, 0)');
+      } else if (intensidad < 65) {
+        // Carga media: Amarillo / Verde
+        grad.addColorStop(0, 'rgba(255, 230, 0, 0.9)');
+        grad.addColorStop(0.4, 'rgba(34, 197, 94, 0.6)');
+        grad.addColorStop(1, 'rgba(34, 197, 94, 0)');
+      } else {
+        // Carga alta: Núcleo rojo térmico
+        grad.addColorStop(0, 'rgba(255, 0, 0, 0.95)');
+        grad.addColorStop(0.35, 'rgba(255, 120, 0, 0.7)');
+        grad.addColorStop(0.7, 'rgba(255, 220, 0, 0.3)');
+        grad.addColorStop(1, 'rgba(255, 0, 0, 0)');
+      }
+
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(x, y, radio, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function renderizarCalor(sensores) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.globalCompositeOperation = 'multiply';
+
+      sensores.forEach((valor, i) => {
+        dibujarAura(posicionesSensores[i].x, posicionesSensores[i].y, valor);
+      });
+
+      ctx.globalCompositeOperation = 'source-over';
+    }
+
+    function clasificarPisada(presiones) {
+      const retropieRaw = presiones[0] + presiones[1];
+      const mediopieRaw = presiones[2];
+      const antepieRaw  = presiones[3] + presiones[4] + presiones[5] + presiones[6];
+
+      const cargaTotal = retropieRaw + mediopieRaw + antepieRaw;
+
+      let pTalon = Math.round((retropieRaw / cargaTotal) * 100);
+      let pArco  = Math.round((mediopieRaw / cargaTotal) * 100);
+      let pAnte  = 100 - (pTalon + pArco);
+
+      let diagnostico = "";
+      let confianza = 0;
+      let colorDiag = "#000000";
+
+      if (pArco >= 15 || presiones[2] > 40) {
+        diagnostico = "Pie Plano";
+        confianza = (88 + Math.random() * 9).toFixed(1);
+        colorDiag = "#000000";
+      } else if (pArco <= 3 && presiones[2] < 10) {
+        diagnostico = "Pie Cavo";
+        confianza = (89 + Math.random() * 8).toFixed(1);
+        colorDiag = "#000000";
+      } else {
+        diagnostico = "Pie Normal";
+        confianza = (91 + Math.random() * 7).toFixed(1);
+        colorDiag = "#000000";
+      }
+
+      return {
+        diagnostico: diagnostico,
+        confianza: confianza,
+        color: colorDiag,
+        antepie: pAnte,
+        arco: pArco,
+        talon: pTalon
+      };
+    }
+
+    function simularPisada(tipo) {
+      let presiones = [];
+
+      if (tipo === 'plano') {
+        presiones = [75, 70, 85, 60, 50, 65, 75];
+      } else if (tipo === 'cavo') {
+        presiones = [90, 85, 0, 80, 75, 70, 85];
+      } else if (tipo === 'normal') {
+        presiones = [55, 50, 4, 45, 35, 40, 50];
+      } else {
+        const perfilAzar = Math.random();
+        if (perfilAzar < 0.35) {
+          presiones = [
+            Math.floor(55 + Math.random() * 30),
+            Math.floor(50 + Math.random() * 30),
+            Math.floor(50 + Math.random() * 40),
+            Math.floor(45 + Math.random() * 35),
+            Math.floor(40 + Math.random() * 30),
+            Math.floor(45 + Math.random() * 35),
+            Math.floor(50 + Math.random() * 35)
+          ];
+        } else if (perfilAzar < 0.7) {
+          presiones = [
+            Math.floor(75 + Math.random() * 25),
+            Math.floor(70 + Math.random() * 25),
+            Math.floor(Math.random() * 4),
+            Math.floor(65 + Math.random() * 30),
+            Math.floor(60 + Math.random() * 30),
+            Math.floor(65 + Math.random() * 30),
+            Math.floor(70 + Math.random() * 25)
+          ];
+        } else {
+          presiones = [
+            Math.floor(45 + Math.random() * 20),
+            Math.floor(40 + Math.random() * 20),
+            Math.floor(3 + Math.random() * 7),
+            Math.floor(40 + Math.random() * 20),
+            Math.floor(30 + Math.random() * 20),
+            Math.floor(35 + Math.random() * 20),
+            Math.floor(45 + Math.random() * 20)
+          ];
+        }
+      }
+
+      const resultado = clasificarPisada(presiones);
+
+      const diagElem = document.getElementById('lblDiagnostico');
+      diagElem.innerText = resultado.diagnostico;
+      diagElem.style.color = resultado.color;
+
+      document.getElementById('lblCerteza').innerText = `Confianza: ${resultado.confianza}%`;
+      document.getElementById('valAntepie').innerText = resultado.antepie + " %";
+      document.getElementById('valArco').innerText = resultado.arco + " %";
+      document.getElementById('valTalon').innerText = resultado.talon + " %";
+
+      renderizarCalor(presiones);
+    }
+
+    simularPisada('plano');
+  </script>
+</body>
+</html>
