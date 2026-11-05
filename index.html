@@ -75,12 +75,6 @@
     }
 
     .btn-group {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .btn-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
@@ -98,20 +92,13 @@
       transition: background 0.2s;
     }
     .btn:hover { background: #4f46e5; }
-    .btn:disabled {
-      background: #94a3b8;
-      cursor: progress;
-    }
 
-    .btn-reset {
-      background: #e2e8f0;
-      color: #1e293b;
-    }
-    .btn-reset:hover { background: #cbd5e1; }
-
+    /* Botón destacado para abrir el reporte biomecánico */
     .btn-modal {
+      grid-column: span 2;
       background: #1e293b;
       color: #ffffff;
+      margin-top: 5px;
     }
     .btn-modal:hover { background: #0f172a; }
 
@@ -190,10 +177,9 @@
       width: 140px;
       height: 8px;
       border-radius: 4px;
-      background: linear-gradient(to right, #00f5ff, #22c55e, #facc15, #ef4444);
+      background: linear-gradient(to right, #00ffff, #00ff00, #ffff00, #ff0000);
     }
 
-    /* Modal */
     .modal-overlay {
       position: fixed;
       top: 0;
@@ -201,7 +187,7 @@
       width: 100vw;
       height: 100vh;
       background: rgba(15, 23, 42, 0.7);
-      display: none;
+      display: none; /* Oculto por defecto */
       justify-content: center;
       align-items: center;
       z-index: 100;
@@ -269,6 +255,7 @@
       display: block;
     }
 
+    /* Etiquetas de porcentaje flotantes */
     .pct-tag {
       position: absolute;
       left: 50%;
@@ -345,19 +332,19 @@
 
   <div class="dashboard-container">
     
-    <!-- Panel Izquierdo -->
+    <!-- Panel Izquierdo: Métricas y Controles -->
     <div class="panel-metrics">
       <div class="card-box">
-        <div class="diag-label" id="lblTituloDiagnostico">Estado del Sistema</div>
-        <div class="diag-value" id="lblDiagnostico">En Espera</div>
-        <div class="diag-conf" id="lblCerteza">Presione Iniciar Análisis</div>
+        <div class="diag-label">Diagnóstico Detectado</div>
+        <div class="diag-value" id="lblDiagnostico">Pie Plano</div>
+        <div class="diag-conf" id="lblCerteza">Confianza: 95.8%</div>
       </div>
 
       <div class="btn-group">
-        <div class="btn-row">
-          <button id="btnAnalizar" class="btn" onclick="iniciarAnalisis()">Iniciar Análisis</button>
-          <button id="btnFinalizar" class="btn btn-reset" onclick="finalizarTest()">Finalizar</button>
-        </div>
+        <button class="btn" onclick="simularPisada('normal')">Test Normal</button>
+        <button class="btn" onclick="simularPisada('plano')">Test Plano</button>
+        <button class="btn" onclick="simularPisada('cavo')">Test Cavo</button>
+        <button class="btn" onclick="simularPisada('muestreo')">Muestreo en Vivo</button>
         <button class="btn btn-modal" onclick="abrirModal()">Reporte Biomecánico</button>
       </div>
 
@@ -372,23 +359,23 @@
           </thead>
           <tbody>
             <tr>
-              <td>Sección Alta</td>
-              <td id="valAntepie">-- %</td>
+              <td>Sección Alta (Metatarsos y Hallux)</td>
+              <td id="valAntepie">40 %</td>
             </tr>
             <tr>
-              <td>Sección Media</td>
-              <td id="valArco">-- %</td>
+              <td>Sección Media (Bóveda / Arco Medial)</td>
+              <td id="valArco">35 %</td>
             </tr>
             <tr>
-              <td>Sección Baja</td>
-              <td id="valTalon">-- %</td>
+              <td>Sección Baja (Retropié / Talón)</td>
+              <td id="valTalon">25 %</td>
             </tr>
           </tbody>
         </table>
       </div>
     </div>
 
-    <!-- Panel Derecho -->
+    <!-- Panel Derecho: Pie con Mapa de Calor -->
     <div class="panel-heatmap">
       <div class="foot-stage">
         <img src="pie_referencia.png" alt="Silueta anatómica del pie" class="foot-img">
@@ -396,15 +383,14 @@
       </div>
 
       <div class="thermal-scale">
-        <span>Baja (Cian)</span>
+        <span>Baja</span>
         <div class="scale-bar"></div>
-        <span>Alta (Rojo)</span>
+        <span>Alta</span>
       </div>
     </div>
 
   </div>
 
-  <!-- Modal Biometría -->
   <div id="modalBiometria" class="modal-overlay" onclick="cerrarModalAfuera(event)">
     <div class="modal-card">
       <button class="btn-cerrar" onclick="cerrarModal()">✕</button>
@@ -414,36 +400,38 @@
       </header>
 
       <div class="modal-content">
+        <!-- Imagen del pie con los porcentajes superpuestos -->
         <div class="foot-sections-view">
           <img src="pie_referencia.png" alt="Huella del pie dividida" class="foot-sections-img">
-          <span id="modalPctAlta" class="pct-tag pct-alta">-- %</span>
-          <span id="modalPctMedia" class="pct-tag pct-media">-- %</span>
-          <span id="modalPctBaja" class="pct-tag pct-baja">-- %</span>
+          <span id="modalPctAlta" class="pct-tag pct-alta">40 %</span>
+          <span id="modalPctMedia" class="pct-tag pct-media">35 %</span>
+          <span id="modalPctBaja" class="pct-tag pct-baja">25 %</span>
         </div>
 
+        <!-- Descripciones clínicas por sección -->
         <div class="modal-measurements">
           <h2>Mediciones Regionales</h2>
 
           <div class="section-block">
-            <h3>Sección Alta (Forefoot)</h3>
-            <p>Evalúa los sensores S1 (Hallux) y S2 (metatarsiano externo). Determina el balance en la propulsión y despegue del paso.</p>
+            <h3>Sección Alta (Antepié)</h3>
+            <p>Evalúa la concentración de carga sobre el primer y quinto metatarsiano, así como el dedo hallux (pulgar). Clave para analizar la fase propulsiva y el despegue de la marcha.</p>
           </div>
 
           <div class="section-block">
-            <h3>Sección Media (Midfoot)</h3>
-            <p>Monitorea los sensores transversales S3, S4 y S5. Es la región diagnóstica fundamental: un apoyo alto en S5 delata colapso del arco (pie plano), mientras que la descarga completa indica pie cavo.</p>
+            <h3>Sección Media (Mediopié / Arco)</h3>
+            <p>Monitorea la respuesta de la bóveda plantar longitudinal interna. Un contacto excesivo evidencia colapso del arco (pie plano), mientras que una ausencia total indica un arco excesivamente elevado (pie cavo).</p>
           </div>
 
           <div class="section-block">
-            <h3>Sección Baja (Rearfoot)</h3>
-            <p>Registra el impacto en los sensores S6 y S7 en el calcáneo (talón), verificando la absorción inicial del choque de la marcha.</p>
+            <h3>Sección Baja (Retropié / Talón)</h3>
+            <p>Registra la fuerza vertical y la absorción de impacto durante el choque de talón medial y lateral, permitiendo clasificar el equilibrio del retropié.</p>
           </div>
         </div>
       </div>
 
       <footer class="modal-diagnosis">
         <span class="modal-diagnosis-label">Posible Diagnóstico:</span>
-        <span id="modalDiagnosisResult" class="modal-diagnosis-result">---</span>
+        <span id="modalDiagnosisResult" class="modal-diagnosis-result">PIE PLANO</span>
       </footer>
     </div>
   </div>
@@ -453,36 +441,39 @@
     const ctx = canvas.getContext('2d');
 
     const posicionesSensores = [
-      { id: 'S1', x: 172, y: 78  }, // S1: Medial superior (zona Hallux)
+      // FOREFOOT (Antepié)
+      { id: 'S1', x: 172, y: 78  }, // S1: Medial superior (zona Hallux / Dedo gordo)
       { id: 'S2', x: 104, y: 148 }, // S2: Lateral externo (antepié)
+
+      // MIDFOOT (Mediopié / Arco) - 3 sensores en línea transversal
       { id: 'S3', x: 92,  y: 226 }, // S3: Borde lateral externo
       { id: 'S4', x: 135, y: 226 }, // S4: Mediopié central
       { id: 'S5', x: 178, y: 226 }, // S5: Arco medial interno
+
+      // REARFOOT (Retropié / Talón) - 2 sensores basales
       { id: 'S6', x: 112, y: 348 }, // S6: Talón lateral
       { id: 'S7', x: 158, y: 348 }  // S7: Talón medial
     ];
 
-    // Se asegura que los 7 sensores se rendericen siempre
     function dibujarAura(x, y, intensidad) {
-      const radio = 18 + (intensidad * 0.40);
+      if (intensidad <= 2) return;
+
+      const radio = 20 + (intensidad * 0.42);
       const grad = ctx.createRadialGradient(x, y, 2, x, y, radio);
 
       if (intensidad < 30) {
-        // CIAN SIEMPRE VISIBLE
-        grad.addColorStop(0, 'rgba(0, 245, 255, 0.95)');
-        grad.addColorStop(0.45, 'rgba(0, 210, 255, 0.55)');
-        grad.addColorStop(1, 'rgba(0, 210, 255, 0)');
+        grad.addColorStop(0, 'rgba(0, 200, 255, 0.85)');
+        grad.addColorStop(0.5, 'rgba(0, 150, 255, 0.4)');
+        grad.addColorStop(1, 'rgba(0, 100, 255, 0)');
       } else if (intensidad < 65) {
-        // VERDE / AMARILLO
-        grad.addColorStop(0, 'rgba(250, 204, 21, 0.95)');
-        grad.addColorStop(0.45, 'rgba(34, 197, 94, 0.6)');
+        grad.addColorStop(0, 'rgba(255, 230, 0, 0.9)');
+        grad.addColorStop(0.4, 'rgba(34, 197, 94, 0.6)');
         grad.addColorStop(1, 'rgba(34, 197, 94, 0)');
       } else {
-        // ROJO / ALTA PRESIÓN
-        grad.addColorStop(0, 'rgba(239, 68, 68, 1)');
-        grad.addColorStop(0.35, 'rgba(249, 115, 22, 0.75)');
-        grad.addColorStop(0.7, 'rgba(250, 204, 21, 0.3)');
-        grad.addColorStop(1, 'rgba(239, 68, 68, 0)');
+        grad.addColorStop(0, 'rgba(255, 0, 0, 0.95)');
+        grad.addColorStop(0.35, 'rgba(255, 120, 0, 0.7)');
+        grad.addColorStop(0.7, 'rgba(255, 220, 0, 0.3)');
+        grad.addColorStop(1, 'rgba(255, 0, 0, 0)');
       }
 
       ctx.fillStyle = grad;
@@ -503,9 +494,9 @@
     }
 
     function clasificarPisada(presiones) {
-      const antepieRaw  = presiones[0] + presiones[1];
-      const mediopieRaw = presiones[2] + presiones[3] + presiones[4];
-      const retropieRaw = presiones[5] + presiones[6];
+      const retropieRaw = presiones[0] + presiones[1];
+      const mediopieRaw = presiones[2];
+      const antepieRaw  = presiones[3] + presiones[4] + presiones[5] + presiones[6];
 
       const cargaTotal = retropieRaw + mediopieRaw + antepieRaw;
 
@@ -516,10 +507,10 @@
       let diagnostico = "";
       let confianza = 0;
 
-      if (pArco >= 25 || presiones[4] >= 45) {
+      if (pArco >= 15 || presiones[2] >= 40) {
         diagnostico = "Pie Plano";
         confianza = (88 + Math.random() * 9).toFixed(1);
-      } else if (pArco <= 12 && presiones[4] <= 15) {
+      } else if (pArco <= 1 && presiones[2] <= 2) {
         diagnostico = "Pie Cavo";
         confianza = (89 + Math.random() * 8).toFixed(1);
       } else {
@@ -536,99 +527,72 @@
       };
     }
 
-    function iniciarAnalisis() {
-      const btn = document.getElementById('btnAnalizar');
-      btn.disabled = true;
-      btn.innerText = "Muestreando...";
-      document.getElementById('lblTituloDiagnostico').innerText = "Estado del Sistema";
-      document.getElementById('lblDiagnostico').innerText = "Procesando...";
-      document.getElementById('lblCerteza').innerText = "Adquiriendo lecturas...";
+    function simularPisada(tipo) {
+      let presiones = [];
 
-      setTimeout(() => {
-        let presiones = [];
+      if (tipo === 'plano') {
+        presiones = [75, 70, 85, 60, 50, 65, 75];
+      } else if (tipo === 'cavo') {
+        presiones = [90, 85, 0, 80, 75, 70, 85];
+      } else if (tipo === 'normal') {
+        presiones = [55, 50, 12, 45, 35, 40, 50];
+      } else {
         const perfilAzar = Math.random();
-
         if (perfilAzar < 0.33) {
-          // PIE PLANO: los 7 activos 
           presiones = [
-            Math.floor(25 + Math.random() * 35),
-            Math.floor(20 + Math.random() * 30),
-            Math.floor(25 + Math.random() * 25),
-            Math.floor(35 + Math.random() * 25),
-            Math.floor(55 + Math.random() * 35), 
+            Math.floor(55 + Math.random() * 30),
+            Math.floor(50 + Math.random() * 30),
+            Math.floor(45 + Math.random() * 40),
+            Math.floor(45 + Math.random() * 35),
             Math.floor(40 + Math.random() * 30),
-            Math.floor(35 + Math.random() * 30)
+            Math.floor(45 + Math.random() * 35),
+            Math.floor(50 + Math.random() * 35)
           ];
         } else if (perfilAzar < 0.66) {
-          // PIE CAVO: arco en nivel base, sobrecarga en talón y antepié
           presiones = [
-            Math.floor(75 + Math.random() * 20),
-            Math.floor(70 + Math.random() * 20),
-            Math.floor(15 + Math.random() * 10),
-            Math.floor(6 + Math.random() * 6),   
-            Math.floor(6 + Math.random() * 6),  
-            Math.floor(75 + Math.random() * 20),
-            Math.floor(70 + Math.random() * 20)
+            Math.floor(75 + Math.random() * 25),
+            Math.floor(70 + Math.random() * 25),
+            0,
+            Math.floor(65 + Math.random() * 30),
+            Math.floor(60 + Math.random() * 30),
+            Math.floor(65 + Math.random() * 30),
+            Math.floor(70 + Math.random() * 25)
           ];
         } else {
-          // PIE NORMAL: los 7 activos
           presiones = [
             Math.floor(45 + Math.random() * 20),
-            Math.floor(15 + Math.random() * 15),
-            Math.floor(15 + Math.random() * 15),
-            Math.floor(8 + Math.random() * 8),
-            Math.floor(8 + Math.random() * 8),
-            Math.floor(45 + Math.random() * 20),
-            Math.floor(40 + Math.random() * 20)
+            Math.floor(40 + Math.random() * 20),
+            Math.floor(8 + Math.random() * 10),
+            Math.floor(40 + Math.random() * 20),
+            Math.floor(30 + Math.random() * 20),
+            Math.floor(35 + Math.random() * 20),
+            Math.floor(45 + Math.random() * 20)
           ];
         }
+      }
 
-        const resultado = clasificarPisada(presiones);
+      const resultado = clasificarPisada(presiones);
 
-        // Se activa el título "Diagnóstico Detectado" al finalizar
-        document.getElementById('lblTituloDiagnostico').innerText = "Diagnóstico Detectado";
-        document.getElementById('lblDiagnostico').innerText = resultado.diagnostico;
-        document.getElementById('lblDiagnostico').style.color = '#000000';
+      // Actualizar pantalla principal (texto negro)
+      const diagElem = document.getElementById('lblDiagnostico');
+      diagElem.innerText = resultado.diagnostico;
+      diagElem.style.color = '#000000';
 
-        document.getElementById('lblCerteza').innerText = `Confianza: ${resultado.confianza}%`;
-        document.getElementById('valAntepie').innerText = resultado.antepie + " %";
-        document.getElementById('valArco').innerText = resultado.arco + " %";
-        document.getElementById('valTalon').innerText = resultado.talon + " %";
+      document.getElementById('lblCerteza').innerText = `Confianza: ${resultado.confianza}%`;
+      document.getElementById('valAntepie').innerText = resultado.antepie + " %";
+      document.getElementById('valArco').innerText = resultado.arco + " %";
+      document.getElementById('valTalon').innerText = resultado.talon + " %";
 
-        document.getElementById('modalPctAlta').innerText = resultado.antepie + " %";
-        document.getElementById('modalPctMedia').innerText = resultado.arco + " %";
-        document.getElementById('modalPctBaja').innerText = resultado.talon + " %";
-        document.getElementById('modalDiagnosisResult').innerText = resultado.diagnostico.toUpperCase();
+      // Sincronizar automáticamente los datos con la ventana modal
+      document.getElementById('modalPctAlta').innerText = resultado.antepie + " %";
+      document.getElementById('modalPctMedia').innerText = resultado.arco + " %";
+      document.getElementById('modalPctBaja').innerText = resultado.talon + " %";
+      document.getElementById('modalDiagnosisResult').innerText = resultado.diagnostico.toUpperCase();
 
-        renderizarCalor(presiones);
-
-        btn.disabled = false;
-        btn.innerText = "Iniciar Análisis";
-      }, 700);
+      renderizarCalor(presiones);
     }
 
-    // Botón Finalizar: restablece la pantalla al estado inicial
-    function finalizarTest() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      document.getElementById('lblTituloDiagnostico').innerText = "Estado del Sistema";
-      document.getElementById('lblDiagnostico').innerText = "En Espera";
-      document.getElementById('lblCerteza').innerText = "Presione Iniciar Análisis";
-
-      document.getElementById('valAntepie').innerText = "-- %";
-      document.getElementById('valArco').innerText = "-- %";
-      document.getElementById('valTalon').innerText = "-- %";
-
-      document.getElementById('modalPctAlta').innerText = "-- %";
-      document.getElementById('modalPctMedia').innerText = "-- %";
-      document.getElementById('modalPctBaja').innerText = "-- %";
-      document.getElementById('modalDiagnosisResult').innerText = "---";
-
-      const btn = document.getElementById('btnAnalizar');
-      btn.disabled = false;
-      btn.innerText = "Iniciar Análisis";
-    }
-
+    // Funciones para controlar la ventana modal
     function abrirModal() {
       document.getElementById('modalBiometria').style.display = 'flex';
     }
@@ -642,6 +606,9 @@
         cerrarModal();
       }
     }
+
+    // Iniciar con Pie Plano por defecto
+    simularPisada('plano');
   </script>
 </body>
 </html>
