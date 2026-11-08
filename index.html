@@ -426,7 +426,7 @@
 
           <div class="section-block">
             <h3>Sección Alta (Forefoot)</h3>
-            <p>Evalúa los sensores S1 (Hallux / Dedo gordo) y S2 (base del Hallux / 1.er metatarsiano). Determina el balance en la propulsión y despegue del paso.</p>
+            <p>Evalúa los sensores S1 (Hallux) y S2 (metatarsiano externo). Determina el balance en la propulsión y despegue del paso.</p>
           </div>
 
           <div class="section-block">
@@ -453,8 +453,8 @@
     const ctx = canvas.getContext('2d');
 
     const posicionesSensores = [
-      { id: 'S1', x: 172, y: 78  }, // S1: Medial superior (Hallux / Dedo gordo)
-      { id: 'S2', x: 172, y: 148 }, // S2: Justo debajo del Hallux (1.er metatarsiano)
+      { id: 'S1', x: 172, y: 78  }, // S1: Medial superior (zona Hallux)
+      { id: 'S2', x: 104, y: 148 }, // S2: Lateral externo (antepié)
       { id: 'S3', x: 92,  y: 226 }, // S3: Borde lateral externo
       { id: 'S4', x: 135, y: 226 }, // S4: Mediopié central
       { id: 'S5', x: 178, y: 226 }, // S5: Arco medial interno
@@ -585,6 +585,7 @@
 
         const resultado = clasificarPisada(presiones);
 
+        // Se activa el título "Diagnóstico Detectado" al finalizar
         document.getElementById('lblTituloDiagnostico').innerText = "Diagnóstico Detectado";
         document.getElementById('lblDiagnostico').innerText = resultado.diagnostico;
         document.getElementById('lblDiagnostico').style.color = '#000000';
@@ -606,6 +607,7 @@
       }, 700);
     }
 
+    // Botón Finalizar: restablece la pantalla al estado inicial
     function finalizarTest() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
